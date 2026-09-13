@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+/*
+  ===========================================================
+  THEME TOKENS
+  ===========================================================
+  Tailwind v4 reads any --color-* / --font-* variable declared
+  inside @theme and turns it into a utility class automatically.
+  So --color-brand-red below gives us "bg-brand-red",
+  "text-brand-red", "border-brand-red", etc. for free.
+*/
+@theme {
+  --color-brand-black: #0a0a0a;
+  --color-brand-black-soft: #141414;
+  --color-brand-red: #e0202a;
+  --color-brand-red-dark: #a5171f;
+  --color-brand-gold: #f5b800;
+
+  --font-display: var(--font-bebas), "Arial Narrow", sans-serif;
+  --font-body: var(--font-poppins), Arial, Helvetica, sans-serif;
+}
+
+:root {
+  --background: var(--color-brand-black);
+  --foreground: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  /* Fallback smooth scroll for anchor links before Lenis takes over */
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--color-brand-red);
+  color: #ffffff;
+}
+
+/* Slim, dark scrollbar so the premium feel holds up in the scroll track too */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-brand-black);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-brand-red-dark);
+  border-radius: 999px;
+}
+
+/*
+  ===========================================================
+  REUSABLE UTILITY CLASSES
+  ===========================================================
+  Small hand-rolled classes used across multiple components so
+  buttons/badges/headings look consistent everywhere.
+*/
+
+/* Primary red CTA button: scales up and glows red on hover */
+.btn-primary {
+  background-color: var(--color-brand-red);
+  color: #ffffff;
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+  padding: 0.9rem 2.4rem;
+  border-radius: 9999px;
+  font-size: 1.1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+  box-shadow: 0 0 0 rgba(224, 32, 42, 0);
+}
+.btn-primary:hover {
+  transform: scale(1.06);
+  background-color: var(--color-brand-red-dark);
+  box-shadow: 0 0 40px rgba(224, 32, 42, 0.65);
+}
+
+/* Outline button variant used in the navbar / secondary CTAs */
+.btn-outline {
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+  padding: 0.75rem 2rem;
+  border-radius: 9999px;
+  transition: border-color 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
+}
+.btn-outline:hover {
+  transform: scale(1.05);
+  border-color: var(--color-brand-red);
+  background-color: rgba(224, 32, 42, 0.1);
+}
+
+/* Red underline accent used under section headings */
+.heading-underline {
+  display: block;
+  height: 4px;
+  width: 90px;
+  margin: 0.75rem auto 0;
+  background: linear-gradient(90deg, var(--color-brand-red), var(--color-brand-red-dark));
+  border-radius: 999px;
+}
+
+/* Soft red glow blob placed behind hero/section visuals for depth */
+.red-glow {
+  background: radial-gradient(circle, rgba(224, 32, 42, 0.45) 0%, rgba(224, 32, 42, 0) 70%);
+  filter: blur(40px);
+}
+
+.hero-grid {
+  background-image: linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
+  background-size: 58px 58px;
+  mask-image: radial-gradient(circle at center, black, transparent 72%);
+}
+.hero-orb { border-radius: 9999px; filter: blur(28px); }
+.hero-orb-one { width: min(55vw, 690px); height: min(55vw, 690px); background: radial-gradient(circle, rgba(224, 32, 42, .52), rgba(224, 32, 42, 0) 68%); top: 16%; left: 50%; transform: translateX(-50%); }
+.hero-orb-two { width: 26rem; height: 26rem; background: radial-gradient(circle, rgba(245, 184, 0, .18), rgba(245, 184, 0, 0) 68%); right: -10rem; bottom: 8%; }
+.burger-stage { transform-style: preserve-3d; perspective: 1100px; filter: drop-shadow(0 38px 24px rgba(0, 0, 0, .48)); }
+.burger-layer { transform-style: preserve-3d; }
+.burger-layer img { filter: drop-shadow(0 18px 12px rgba(0, 0, 0, .48)); }
+
+.build-arrow span:not(:first-child) {
+  display: block;
+  height: .72rem;
+  font-family: Arial, sans-serif;
+  font-size: 2rem;
+  line-height: .42;
+  color: rgba(245, 184, 0, .78);
+  animation: ingredient-drop 1.45s ease-in-out infinite;
+}
+.build-arrow span:nth-child(3) { animation-delay: .16s; opacity: .72; }
+.build-arrow span:nth-child(4) { animation-delay: .32s; opacity: .46; }
+
+@keyframes ingredient-drop {
+  0%, 100% { transform: translateY(-3px); }
+  50% { transform: translateY(5px); }
+}
+
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
