@@ -3,118 +3,101 @@
 /*
   Testimonials.jsx
   -----------------------------------------------------------
-  Horizontally scrollable row of customer review cards, with
-  arrow buttons that scroll the row by one card at a time.
-  Star ratings use the gold accent color.
+  Horizontally scrollable row of compact review cards, fed by
+  live Google Maps reviews (see lib/api/reviews.ts). Arrow
+  buttons scroll the row by one card at a time. Renders
+  nothing when no reviews could be loaded.
 */
 
 import { useRef } from "react";
+import Link from "next/link";
+import { RESTAURANT_CONTACT } from "@/lib/constants";
+import { useI18n } from "@/context/LocaleContext";
+import { reviewDate, reviewText } from "@/lib/reviewDisplay";
+import ReviewSourceTag, { ReviewAuthor } from "@/components/ReviewSourceTag";
 
-// -----------------------------------------------------------
-// PLACEHOLDER REVIEWS — edit this array to change testimonials.
-// -----------------------------------------------------------
-const TESTIMONIALS = [
-  {
-    id: 1,
-    name: "Sarah Malik",
-    role: "Regular Customer",
-    rating: 5,
-    quote:
-      "Hands down the best burger I've had in this city. The patty is always juicy and the bun is perfectly toasted every single time.",
-  },
-  {
-    id: 2,
-    name: "Ahmed Raza",
-    role: "Food Blogger",
-    rating: 5,
-    quote:
-      "The attention to detail here is unreal — from the sauce to the sear on the patty. This is what a premium burger should taste like.",
-  },
-  {
-    id: 3,
-    name: "Layla Hassan",
-    role: "First-time Visitor",
-    rating: 4,
-    quote:
-      "Walked in for the ambiance, stayed for the food. The double bacon deluxe completely blew me away. Coming back for sure.",
-  },
-  {
-    id: 4,
-    name: "Omar Farooq",
-    role: "Regular Customer",
-    rating: 5,
-    quote:
-      "Consistent quality every visit. You can tell they actually care about the ingredients instead of just the speed of service.",
-  },
-];
-
-export default function Testimonials() {
+export default function Testimonials({ data }) {
+  const { t, locale } = useI18n();
   const scrollRef = useRef(null);
+  const reviews = data?.reviews ?? [];
+  if (reviews.length === 0) return null;
+
+  const placeUrl = data.placeUrl || RESTAURANT_CONTACT.mapsUrl;
 
   function scrollByCard(direction) {
     const container = scrollRef.current;
     if (!container) return;
-    const cardWidth = container.firstChild?.offsetWidth ?? 320;
-    container.scrollBy({ left: direction * (cardWidth + 24), behavior: "smooth" });
+    const cardWidth = container.firstChild?.offsetWidth ?? 280;
+    container.scrollBy({ left: direction * (cardWidth + 16), behavior: "smooth" });
   }
 
   return (
-    <section className="relative bg-brand-black py-16 md:py-20">
+    <section className="relative bg-brand-black py-10 md:py-14">
       <div className="mx-auto max-w-7xl px-6 md:px-10">
-        <div className="flex flex-col items-center gap-6 text-center md:flex-row md:items-end md:justify-between md:text-left">
+        <div className="flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:justify-between md:text-start">
           <div>
-            <h2 className="font-display text-4xl tracking-wide text-white md:text-5xl">WHAT PEOPLE SAY</h2>
+            <h2 className="font-display text-3xl tracking-wide text-white md:text-4xl">{t.testimonials.heading}</h2>
             <span className="heading-underline md:!mx-0" />
+            {data.rating ? (
+              <a href={placeUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 font-body text-sm text-white/60 hover:text-brand-gold">
+                <span className="font-semibold text-brand-gold">{data.rating.toFixed(1)} ★</span>
+                {data.totalCount ? <span>{t.testimonials.reviewsOnGoogle(data.totalCount)}</span> : <span>{t.testimonials.onGoogle}</span>}
+              </a>
+            ) : null}
           </div>
 
-          {/* Arrow controls */}
-          <div className="flex gap-3">
-            <button
-              aria-label="Scroll left"
-              onClick={() => scrollByCard(-1)}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 text-white transition-all duration-300 hover:scale-110 hover:border-brand-red hover:text-brand-red"
-            >
-              ←
-            </button>
-            <button
-              aria-label="Scroll right"
-              onClick={() => scrollByCard(1)}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 text-white transition-all duration-300 hover:scale-110 hover:border-brand-red hover:text-brand-red"
-            >
-              →
-            </button>
+          {/* Arrow controls: each arrow scrolls the way it points, in both directions of text */}
+          <div className="flex items-center gap-2" dir="ltr">
+            <Link href="/reviews" dir={locale === "ar" ? "rtl" : "ltr"} className="mr-2 font-body text-xs font-semibold uppercase tracking-wide text-white/60 hover:text-brand-gold">{t.testimonials.seeAll}</Link>
+            <button aria-label={t.testimonials.scrollLeft} onClick={() => scrollByCard(-1)} className={ARROW_CLASS}>←</button>
+            <button aria-label={t.testimonials.scrollRight} onClick={() => scrollByCard(1)} className={ARROW_CLASS}>→</button>
           </div>
         </div>
 
         {/* Horizontally scrolling card row */}
         <div
           ref={scrollRef}
-          className="mt-12 flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {TESTIMONIALS.map((review) => (
-            <div
+          {reviews.map((review) => (
+            <article
               key={review.id}
-              className="w-[85%] flex-shrink-0 snap-start rounded-2xl border border-white/10 bg-brand-black-soft p-8 transition-all duration-300 hover:border-brand-red/70 hover:shadow-[0_0_35px_rgba(224,32,42,0.2)] sm:w-[60%] md:w-[45%] lg:w-[30%]"
+              className="flex w-[80%] flex-shrink-0 snap-start flex-col rounded-xl border border-white/10 bg-brand-black-soft p-4 transition-colors duration-300 hover:border-brand-red/70 sm:w-[48%] md:w-[32%] lg:w-[24%]"
             >
-              {/* Star rating */}
-              <div className="flex gap-1 text-brand-gold">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <span key={i} className={i < review.rating ? "opacity-100" : "opacity-25"}>
-                    ★
+              <div className="flex items-center gap-3">
+                {review.authorPhotoUrl ? (
+                  <img src={review.authorPhotoUrl} alt="" referrerPolicy="no-referrer" className="h-9 w-9 rounded-full object-cover" />
+                ) : (
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-red font-body text-sm font-semibold text-white">
+                    {review.authorName.charAt(0)}
                   </span>
+                )}
+                <div className="min-w-0">
+                  <ReviewAuthor review={review} placeUrl={placeUrl} className="block truncate font-body text-sm font-semibold text-white" />
+                  <p className="font-body text-xs text-white/40">{reviewDate(review, locale)}</p>
+                </div>
+              </div>
+
+              <div className="mt-2 flex gap-0.5 text-sm text-brand-gold" aria-label={t.testimonials.starsAria(review.rating)}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <span key={i} className={i < review.rating ? "opacity-100" : "opacity-25"}>★</span>
                 ))}
               </div>
 
-              <p className="mt-5 font-body text-sm leading-relaxed text-white/70">&ldquo;{review.quote}&rdquo;</p>
+              {review.text ? (
+                <p dir="auto" className="mt-2 line-clamp-4 font-body text-sm leading-snug text-white/70">{reviewText(review, locale)}</p>
+              ) : null}
 
-              <div className="mt-6 border-t border-white/10 pt-4">
-                <p className="font-display text-lg tracking-wide text-white">{review.name}</p>
-                <p className="font-body text-xs uppercase tracking-wide text-white/40">{review.role}</p>
+              <div className="mt-auto pt-3">
+                <ReviewSourceTag review={review} labels={t.testimonials} placeUrl={placeUrl} />
               </div>
-            </div>
+            </article>
           ))}
         </div>
       </div>
     </section>
   );
 }
+
+const ARROW_CLASS =
+  "flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white transition-colors duration-300 hover:border-brand-red hover:text-brand-red";

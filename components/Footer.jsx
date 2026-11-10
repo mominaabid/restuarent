@@ -1,15 +1,25 @@
+"use client";
+
+import Link from "next/link";
+import { useBranding, useBrandName } from "@/context/BrandingContext";
+import { useI18n } from "@/context/LocaleContext";
+import { DEFAULT_LOGO_URL, RESTAURANT_CONTACT } from "@/lib/constants";
+
 /*
   Footer.jsx
   -----------------------------------------------------------
-  Static dark footer — no animation/browser APIs needed here,
-  so this file does NOT need "use client".
+  Dark footer: brand blurb, links to every page, contact
+  details and socials. A client component only because the
+  restaurant name and language come from client contexts.
 */
 
-const QUICK_LINKS = [
-  { label: "Home", href: "#home" },
-  { label: "Menu", href: "#menu" },
-  { label: "About", href: "#about" },
-];
+const EXPLORE_LINKS = ["menu", "deals", "gallery", "reviews", "catering"];
+const HELP_LINKS = ["about", "faq", "contact"];
+const LEGAL_LINKS = ["privacy", "terms", "refund"];
+const HREFS = {
+  menu: "/menu", deals: "/deals", gallery: "/gallery", reviews: "/reviews", catering: "/catering",
+  about: "/about", faq: "/faq", contact: "/contact", privacy: "/privacy", terms: "/terms", refund: "/refund-policy",
+};
 
 // Simple inline SVG icons so we don't need an extra icon package.
 const SOCIALS = [
@@ -41,48 +51,21 @@ const SOCIALS = [
 ];
 
 export default function Footer() {
+  const branding = useBranding();
+  const brandName = useBrandName();
+  const { t } = useI18n();
   return (
     <footer id="footer" className="border-t border-white/10 bg-brand-black">
       <div className="mx-auto max-w-7xl px-6 py-12 md:px-10">
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-[1.4fr_1fr_1fr_1.3fr]">
           {/* Logo + blurb */}
-          <div>
-            <p className="font-display text-2xl tracking-wider text-white">
-              SMOKE<span className="text-brand-red">&</span>CHAR
-            </p>
-            <p className="mt-4 max-w-xs font-body text-sm leading-relaxed text-white/50">
-              Bold, fire-grilled burgers made from premium ingredients. No shortcuts, ever.
-            </p>
-          </div>
-
-          {/* Quick links */}
-          <div>
-            <h4 className="font-display text-lg tracking-wide text-white">Quick Links</h4>
-            <ul className="mt-4 space-y-2">
-              {QUICK_LINKS.map((link) => (
-                <li key={link.href}>
-                  <a href={link.href} className="font-body text-sm text-white/50 transition-colors hover:text-brand-red">
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contact info */}
-          <div>
-            <h4 className="font-display text-lg tracking-wide text-white">Contact</h4>
-            <ul className="mt-4 space-y-2 font-body text-sm text-white/50">
-              <li>123 Grill Street, Food District</li>
-              <li>+1 (555) 234-5678</li>
-              <li>Mon – Sun: 11:00 AM – 11:00 PM</li>
-            </ul>
-          </div>
-
-          {/* Social icons */}
-          <div>
-            <h4 className="font-display text-lg tracking-wide text-white">Follow Us</h4>
-            <div className="mt-4 flex gap-3">
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex items-center gap-3">
+              <img src={branding?.logoUrl || DEFAULT_LOGO_URL} alt="" className="h-16 w-16 rounded-full bg-white object-cover ring-2 ring-brand-gold/60" />
+              <p className="font-display text-2xl tracking-wider text-white">{brandName}</p>
+            </div>
+            <p className="mt-4 max-w-xs font-body text-sm leading-relaxed text-white/50">{t.footer.blurb}</p>
+            <div className="mt-5 flex gap-3">
               {SOCIALS.map((social) => (
                 <a
                   key={social.label}
@@ -97,13 +80,61 @@ export default function Footer() {
               ))}
             </div>
           </div>
+
+          <FooterLinks title={t.footer.explore} keys={EXPLORE_LINKS} t={t} />
+          <FooterLinks title={t.footer.help} keys={HELP_LINKS} t={t} />
+
+          {/* Contact info */}
+          <div className="col-span-2 md:col-span-1">
+            <h4 className="font-display text-lg tracking-wide text-white">{t.footer.contact}</h4>
+            <ul className="mt-4 space-y-2 font-body text-sm text-white/50">
+              <li>
+                <a href={RESTAURANT_CONTACT.mapsUrl} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-brand-gold">
+                  {t.contact.address}
+                </a>
+              </li>
+              <li>
+                <a href={RESTAURANT_CONTACT.phoneHref} dir="ltr" className="transition-colors hover:text-brand-gold">
+                  {RESTAURANT_CONTACT.phoneDisplay}
+                </a>
+              </li>
+              <li>
+                <a href={RESTAURANT_CONTACT.whatsappUrl} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-brand-gold">
+                  {t.common.chatWhatsapp}
+                </a>
+              </li>
+              <li>{t.contact.openDaily} · {t.contact.hours}</li>
+            </ul>
+          </div>
         </div>
 
-        {/* Bottom copyright line */}
-        <div className="mt-14 border-t border-white/10 pt-6 text-center font-body text-xs text-white/35">
-          © {new Date().getFullYear()} Smoke &amp; Char. All rights reserved.
+        {/* Bottom line: copyright + legal pages */}
+        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 font-body text-xs text-white/35 md:flex-row">
+          <p>© {new Date().getFullYear()} {brandName}. {t.footer.rights}</p>
+          <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+            {LEGAL_LINKS.map((key) => (
+              <li key={key}><Link href={HREFS[key]} className="transition-colors hover:text-brand-gold">{t.nav[key]}</Link></li>
+            ))}
+          </ul>
         </div>
       </div>
     </footer>
+  );
+}
+
+function FooterLinks({ title, keys, t }) {
+  return (
+    <div>
+      <h4 className="font-display text-lg tracking-wide text-white">{title}</h4>
+      <ul className="mt-4 space-y-2">
+        {keys.map((key) => (
+          <li key={key}>
+            <Link href={HREFS[key]} className="font-body text-sm text-white/50 transition-colors hover:text-brand-red">
+              {t.nav[key]}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

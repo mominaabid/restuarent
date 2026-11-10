@@ -12,10 +12,13 @@ import { useLayoutEffect, useRef } from "react";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Link from "next/link";
+import { useI18n } from "@/context/LocaleContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function About() {
+  const { t } = useI18n();
   const sectionRef = useRef(null);
   const textRef = useRef(null);
   const imageRef = useRef(null);
@@ -58,23 +61,20 @@ export default function About() {
         {/* Left: brand story text */}
         <div ref={textRef}>
           <h2 className="font-display text-4xl leading-tight tracking-wide text-white md:text-5xl">
-            BUILT ON FIRE, <span className="text-brand-red">FLAVOR &amp; PRIDE</span>
+            {t.about.heading} <span className="text-brand-red">{t.about.headingAccent}</span>
           </h2>
           <span className="heading-underline !mx-0" />
-          <p className="mt-6 font-body text-base leading-relaxed text-white/65 md:text-lg">
-            Every burger we serve starts with premium beef, hand-pressed and flame-grilled
-            to order — never frozen, never rushed. We source our produce daily and bake our
-            buns fresh each morning because shortcuts have no place in real flavor.
-          </p>
-          <p className="mt-4 font-body text-base leading-relaxed text-white/65 md:text-lg">
-            What began as a single grill has grown into a name people trust for one thing:
-            an honest, unforgettable burger, made with obsessive care every single time.
-          </p>
-          <p className="mt-4 font-body text-base leading-relaxed text-white/65 md:text-lg">
-            From the first crackle on the grill to the last melt of cheese, our kitchen moves
-            with one standard: serve it hot, make it memorable, and never compromise on taste.
-          </p>
-          <div className="mt-7 grid grid-cols-3 gap-3 border-t border-white/10 pt-5 font-body text-xs uppercase tracking-wide text-white/45"><span><b className="block font-display text-2xl text-brand-gold">100%</b>Fresh beef</span><span><b className="block font-display text-2xl text-brand-gold">Daily</b>Prep</span><span><b className="block font-display text-2xl text-brand-gold">Zero</b>Shortcuts</span></div>
+          {t.about.paragraphs.map((paragraph, index) => (
+            <p key={index} className={`${index === 0 ? "mt-6" : "mt-4"} font-body text-base leading-relaxed text-white/65 md:text-lg`}>
+              {paragraph}
+            </p>
+          ))}
+          <div className="mt-7 grid grid-cols-3 gap-3 border-t border-white/10 pt-5 font-body text-xs uppercase tracking-wide text-white/45">
+            {t.about.stats.map((stat) => (
+              <span key={stat.label}><b className="block font-display text-2xl text-brand-gold">{stat.value}</b>{stat.label}</span>
+            ))}
+          </div>
+          <Link href="/about" className="btn-outline mt-7 inline-block !text-sm">{t.about.readStory} {t.common.arrowForward}</Link>
         </div>
 
         {/* Right: brand photo */}
@@ -82,11 +82,11 @@ export default function About() {
           <div className="pointer-events-none absolute -inset-8 -z-10 red-glow" />
           <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl border border-white/10">
             <Image
-              src="/inside kitchen.png"
-              alt="Inside our kitchen"
+              src="/hero/farzan-hero.png"
+              alt={t.about.imageAlt}
               fill
               sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
+              className="object-cover object-[20%_center]"
             />
           </div>
         </div>

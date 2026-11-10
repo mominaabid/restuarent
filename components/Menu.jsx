@@ -15,24 +15,28 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useCart } from "./CartContext";
-import { MENU_ITEMS } from "./menuData";
+import { useCart, lineKey } from "@/context/CartContext";
+import { useI18n } from "@/context/LocaleContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Category tabs shown above the grid.
-const CATEGORIES = ["All", "Burgers", "Pizza", "Sides", "Drinks"];
-
-export default function Menu() {
+// items/categories come from a Server Component that fetched them via lib/api —
+// see app/page.js. Menu never imports mock data directly.
+// `standalone` is the full /menu page, which has its own page header, so the
+// section drops its own heading there.
+export default function Menu({ items, categories, standalone = false }) {
+  const { t } = useI18n();
   const [activeCategory, setActiveCategory] = useState("All");
   const sectionRef = useRef(null);
   const gridRef = useRef(null);
   const isFirstRender = useRef(true);
 
+  const categoryTabs = ["All", ...categories.map((category) => category.name)];
   const filteredItems =
-    activeCategory === "All" ? MENU_ITEMS : MENU_ITEMS.filter((item) => item.category === activeCategory);
+    activeCategory === "All" ? items : items.filter((item) => item.categoryName === activeCategory);
 
   // Animation A: reveal the cards with a staggered fade/slide-up as the
   // section scrolls into view. Runs once, on mount.
@@ -83,19 +87,22 @@ export default function Menu() {
   }
 
   return (
-    <section id="menu" ref={sectionRef} className="relative bg-brand-black px-6 pb-8 pt-16 md:px-10 md:pb-10 md:pt-20">
+    <section id="menu" ref={sectionRef} className={`relative bg-brand-black px-6 pb-8 md:px-10 md:pb-10 ${standalone ? "pt-4" : "pt-16 md:pt-20"}`}>
       {/* Section heading */}
-      <div className="mx-auto max-w-3xl text-center">
-        <h2 className="font-display text-5xl tracking-wide text-white md:text-6xl">OUR MENU</h2>
-        <span className="heading-underline" />
-        <p className="mt-5 font-body text-white/60">
-          Every item made fresh to order, from premium ingredients, with zero shortcuts.
-        </p>
-      </div>
+      {!standalone && (
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="font-display text-5xl tracking-wide text-white md:text-6xl">{t.menu.heading}</h2>
+          <span className="heading-underline" />
+          <p className="mt-5 font-body text-white/60">{t.menu.intro}</p>
+        </div>
+      )}
+      {items.length === 0 && (
+        <p className="mx-auto mt-8 max-w-xl rounded-2xl border border-white/10 bg-brand-black-soft p-6 text-center font-body text-white/60">{t.menu.empty}</p>
+      )}
 
       {/* Category filter tabs */}
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        {CATEGORIES.map((category) => (
+        {categoryTabs.map((category) => (
           <button
             key={category}
             onClick={() => handleCategoryClick(category)}
@@ -105,7 +112,7 @@ export default function Menu() {
                 : "border-white/15 text-white/70 hover:border-brand-red hover:text-white"
             }`}
           >
-            {category}
+            {category === "All" ? t.common.all : category}
           </button>
         ))}
       </div>
@@ -124,11 +131,18 @@ export default function Menu() {
 }
 
 function MenuCard({ item }) {
-  const { addToCart } = useCart();
+  const { t, money } = useI18n();
+  const { addToCart, cartItems } = useCart();
   const [wasAdded, setWasAdded] = useState(false);
+  // Same stock rules as the QR menu: sold out at 0, capped at what's left.
+  const maxQuantity = item.availableQuantity;
+  const inCart = cartItems.find((line) => lineKey(line) === String(item.id))?.quantity ?? 0;
+  const soldOut = !item.isOrderable || maxQuantity === 0;
+  const atLimit = typeof maxQuantity === "number" && inCart >= maxQuantity;
 
   function handleAddToCart() {
-    addToCart(item);
+    if (item.variants?.length || soldOut || atLimit) return;
+    addToCart({ ...item, maxQuantity });
     setWasAdded(true);
     window.setTimeout(() => setWasAdded(false), 1100);
   }
@@ -136,31 +150,40 @@ function MenuCard({ item }) {
   return (
     <div className="menu-card group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-brand-black-soft transition-all duration-300 hover:-translate-y-2 hover:border-brand-red/70 hover:shadow-[0_0_35px_rgba(224,32,42,0.25)]">
       {/* Image */}
-      <div className="relative h-56 w-full overflow-hidden">
+      <Link href={`/menu/${item.id}`} className="relative block h-56 w-full overflow-hidden" aria-label={t.menu.viewItem(item.name)}>
         <Image
           src={item.image}
           alt={item.name}
           fill
+          unoptimized
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
           className="object-cover transition-transform duration-500 group-hover:scale-110"
         />
         {item.badge && (
-          <span className="absolute right-3 top-3 rounded-full bg-brand-gold px-3 py-1 font-body text-xs font-bold uppercase tracking-wide text-brand-black">
-            {item.badge}
+          <span className="absolute end-3 top-3 rounded-full bg-brand-gold px-3 py-1 font-body text-xs font-bold uppercase tracking-wide text-brand-black">
+            {t.common.badges[item.badge] ?? item.badge}
           </span>
         )}
-      </div>
+        {soldOut && <span className="absolute bottom-3 start-3 rounded-full bg-black/80 px-3 py-1 text-xs font-semibold uppercase text-white">{t.common.unavailable}</span>}
+      </Link>
 
       {/* Content */}
       <div className="flex flex-1 flex-col gap-3 p-6">
-        <h3 className="font-display text-2xl tracking-wide text-white">{item.name}</h3>
+        <Link href={`/menu/${item.id}`} className="font-display text-2xl tracking-wide text-white transition-colors hover:text-brand-gold">
+          <h3>{item.name}</h3>
+        </Link>
         <p className="flex-1 font-body text-sm leading-relaxed text-white/60">{item.description}</p>
 
         <div className="mt-2 flex items-center justify-between">
-          <span className="font-display text-2xl tracking-wide text-brand-gold">{item.price}</span>
-          <button onClick={handleAddToCart} className={`btn-outline !py-2 !px-5 !text-xs ${wasAdded ? "!border-brand-gold !bg-brand-gold !text-brand-black" : ""}`}>
-            {wasAdded ? "Added ✓" : "Add to Cart"}
-          </button>
+          <span className="flex items-baseline gap-2">
+            {item.onDeal && item.originalPrice != null && (
+              <span className="font-body text-sm text-white/40 line-through">{money(item.originalPrice)}</span>
+            )}
+            <span className="font-display text-2xl tracking-wide text-brand-gold">{money(item.price)}</span>
+          </span>
+          {item.variants?.length ? <Link href={`/menu/${item.id}`} className="btn-outline !py-2 !px-5 !text-xs">{t.common.chooseOption}</Link> : <button onClick={handleAddToCart} disabled={soldOut || atLimit} title={atLimit ? t.common.onlyAvailable(maxQuantity) : undefined} className={`btn-outline !py-2 !px-5 !text-xs disabled:opacity-50 ${wasAdded ? "!border-brand-gold !bg-brand-gold !text-brand-black" : ""}`}>
+            {soldOut ? t.common.notAvailable : atLimit ? t.common.max(maxQuantity) : wasAdded ? t.common.added : t.common.addToCart}
+          </button>}
         </div>
       </div>
     </div>

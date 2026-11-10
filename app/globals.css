@@ -29,6 +29,20 @@
   box-sizing: border-box;
 }
 
+/* Arabic: Cairo for headlines and body. Bebas Neue and Poppins have no Arabic
+   glyphs, and letter-spacing breaks the joins between Arabic letters, so the
+   tracking-* utilities are neutralised too. */
+html[lang="ar"] {
+  --font-display: var(--font-cairo), Tahoma, Arial, sans-serif;
+  --font-body: var(--font-cairo), Tahoma, Arial, sans-serif;
+}
+html[lang="ar"] body * {
+  letter-spacing: normal !important;
+}
+html[lang="ar"] .font-display {
+  font-weight: 800;
+}
+
 html {
   /* Fallback smooth scroll for anchor links before Lenis takes over */
   scroll-behavior: smooth;
@@ -105,7 +119,8 @@ body {
   display: block;
   height: 4px;
   width: 90px;
-  margin: 0.75rem auto 0;
+  margin-block: 0.75rem 0;
+  margin-inline: auto;
   background: linear-gradient(90deg, var(--color-brand-red), var(--color-brand-red-dark));
   border-radius: 999px;
 }
@@ -116,33 +131,94 @@ body {
   filter: blur(40px);
 }
 
-.hero-grid {
-  background-image: linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
-  background-size: 58px 58px;
-  mask-image: radial-gradient(circle at center, black, transparent 72%);
+/* Pure-CSS entrance for server-rendered content (e.g. order tracking) where
+   pulling in GSAP for one reveal isn't worth the JS. Pair with an inline
+   animation-delay for a staggered feel across a few elements. */
+.fade-up-in {
+  animation: fade-up-in 0.5s ease-out both;
 }
-.hero-orb { border-radius: 9999px; filter: blur(28px); }
-.hero-orb-one { width: min(55vw, 690px); height: min(55vw, 690px); background: radial-gradient(circle, rgba(224, 32, 42, .52), rgba(224, 32, 42, 0) 68%); top: 16%; left: 50%; transform: translateX(-50%); }
-.hero-orb-two { width: 26rem; height: 26rem; background: radial-gradient(circle, rgba(245, 184, 0, .18), rgba(245, 184, 0, 0) 68%); right: -10rem; bottom: 8%; }
-.burger-stage { transform-style: preserve-3d; perspective: 1100px; filter: drop-shadow(0 38px 24px rgba(0, 0, 0, .48)); }
-.burger-layer { transform-style: preserve-3d; }
-.burger-layer img { filter: drop-shadow(0 18px 12px rgba(0, 0, 0, .48)); }
-
-.build-arrow span:not(:first-child) {
-  display: block;
-  height: .72rem;
-  font-family: Arial, sans-serif;
-  font-size: 2rem;
-  line-height: .42;
-  color: rgba(245, 184, 0, .78);
-  animation: ingredient-drop 1.45s ease-in-out infinite;
-}
-.build-arrow span:nth-child(3) { animation-delay: .16s; opacity: .72; }
-.build-arrow span:nth-child(4) { animation-delay: .32s; opacity: .46; }
-
-@keyframes ingredient-drop {
-  0%, 100% { transform: translateY(-3px); }
-  50% { transform: translateY(5px); }
+@keyframes fade-up-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .fade-up-in { animation: none; }
+}
+
+/* ── Customer slip printing (paid bill, tax invoice) ───────────────────────
+   lib/printSlip.js marks the slip(s) `.print-slip`, sets `printing-slip` on
+   <html> and injects the @page size (80mm × the slip's measured length). */
+@media print {
+  html.printing-slip,
+  html.printing-slip body {
+    width: 80mm;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  /* Everything that is neither the slip nor on the way to it is taken out of
+     the layout. Merely hiding it (visibility) kept its height, so the
+     invisible page printed as blank paper after the slip. */
+  html.printing-slip body *:not(.print-slip, .print-slip *, :has(.print-slip)) {
+    display: none !important;
+  }
+  /* The slip's ancestors collapse to plain blocks so it starts top-left. */
+  html.printing-slip body :has(.print-slip) {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    background: #fff !important;
+  }
+  html.printing-slip .print-slip {
+    display: block !important;
+    color: #000;
+    background: #fff;
+  }
+}
+/* Shared by print and by printSlip's measuring pass, so the measured length
+   is the printed one. An 80mm printer prints ~72mm wide: the side padding
+   keeps text off the edges it cannot reach. */
+html.printing-slip .print-slip,
+html.slip-measure .print-slip {
+  width: 80mm !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding-inline: 4mm !important;
+  box-sizing: border-box;
+}
+/* Measuring pass (screen): laid out off-screen at print width, unseen. */
+html.slip-measure .print-slip {
+  display: block !important;
+  position: fixed !important;
+  left: -10000px;
+  top: 0;
+  visibility: hidden;
+}
+
+/* Horizontal swipe rows (QR menu categories) without a visible scrollbar. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Taps on phones: no grey flash, no 300ms double-tap zoom delay on controls. */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
